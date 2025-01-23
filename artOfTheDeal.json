@@ -1,0 +1,8 @@
+{
+	"id": "aotd",
+	"name": "Art of the Deal",
+	"author": ["Rad Dealer", "Various Artists"],
+	"description": "An assortment of additions by me or others, all programed by me",
+	"prefix": "deal",
+	"main_file": "main.lua",
+}
