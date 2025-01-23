@@ -1,0 +1,21 @@
+[manifest]
+version = "1.0.0"
+priority = 0
+
+[vars]
+
+
+
+
+[[patches]]
+[patches.pattern]
+target = 'card.lua'
+match_indent = true
+position = 'before'
+pattern = '''if self.seal == 'Blue' and #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit and not self.ability.extra_enhancement then'''
+payload = '''
+if self.seal == 'Blue' and #G.consumeables.cards + G.GAME.consumeable_buffer >= G.consumeables.config.card_limit and not self.ability.extra_enhancement then
+  SMODS.calculate_context({ deal_blue_seal_failed = true, card = self })
+  ret.effect = true
+end
+'''
