@@ -1400,7 +1400,8 @@ SMODS.Joker
 				{
 					colour = G.C.RED,
                     card = card,
-					message = 'Petrified!'
+					message = 'Petrified!',
+					sound = 'deal_hiss'
 				}
 			end
 		end
