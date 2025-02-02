@@ -8,7 +8,7 @@ it must also follow the balatro styleguides (which can be found in #fan-art on t
 but I ask you at least maintain the correct size of cards (69 by 93 px for jokers), and try to go no darker than 'balatro black' which is #4f6367
 2. You can preferably provide me a basic description of what you want it to do, though this is optional if push comes to shove
 
-List of joker additions (this probably wont ever be adjusted past the first thirty jokers)
+List of joker additions (this probably wont ever be adjusted past the first twenty jokers)
 1. Atraxia, increases in Xmult every round you dont buy something, resets when you spend money, by me
 2. Punchcard, rounds chips and mult *up* to the nearest power of two, by me
 3. Jooj, jooj, art and concept by JinFlux
@@ -29,3 +29,19 @@ List of joker additions (this probably wont ever be adjusted past the first thir
 18. Reflection, retrigger all played glass cards, art and concept by CROW
 19. Comedy Gold, Gains half of all sell value of all other jokers at end of round
 20. ???
+
+And currently 10 More!
+
+-----------------------
+
+Version history + roadmap
+
+V1.0 initial release, 20 jokers
+
+V1.1 adds 10 new jokers, and also moves some of the jokers around in the collection to put each artists' jokers next to each other to the best of my ability
+
+--Upcoming--
+
+V1.2 plans on adding 6 new decks to the game
+
+V2.0 will have joker submissions reopened, along with a few slots for consumables/vouchers/etc, will take a while before that happens as i will be working on a personal project before then
