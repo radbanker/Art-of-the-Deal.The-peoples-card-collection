@@ -17,6 +17,66 @@ SMODS.Atlas
 
 
 
+
+--Buckshot sounds--
+
+SMODS.Sound
+{
+	key = 'live',
+	path = 'deal_gunshot_live.ogg'
+}
+
+SMODS.Sound
+{
+	key = 'blank',
+	path = 'deal_gunshot_blank.ogg'
+}
+
+--Gamblecore Sound--
+
+SMODS.Sound
+{
+	key = 'winning',
+	path = 'deal_cantstopwinning.ogg'
+}
+
+--Medusa Sound--
+
+SMODS.Sound
+{
+	key = 'hiss',
+	path = 'deal_hiss.ogg'
+}
+
+
+
+
+
+
+
+
+
+
+--For now, just adds a context for when a card gets an edition
+local se = Card.set_edition
+function Card:set_edition(edition, immediate, silent)
+	if G.playing_cards then
+		for i,v in ipairs(G.playing_cards) do
+			if card == v and edition then
+				SMODS.calculate_context({ deal_edition_change = true, card = Card })
+			end
+		end
+	end
+	se(self, edition, immediate, silent)
+end
+
+
+
+
+
+
+
+
 --Atraxia--
 
 --For every consecutive round without buying something gain .5x mult--
@@ -31,13 +91,16 @@ SMODS.Joker
 			'For every consecutive {C:attention}round{} without',
 			'buying something at the {C:attention}Shop{},',
 			'gain {X:mult,C:white}X0.5{} Mult.',
-			'{C:inactive}(Currently {}{X:mult,C:white}X#1#{}{C:inactive} Mult){}'
+			'{C:inactive}(Currently {}{X:mult,C:white}X#1#{}{C:inactive} Mult){}',
+			'\n',
+			'{C:inactive}\'Pure of Mod, Body, and Soul\''
 		}
 	},
 	atlas = 'Jokers',
 	pos = {x = 0, y = 0},
 	rarity = 3,
 	cost = 7,
+	blueprint_compat = true,
 	config = 
 	{ 
 		extra = 
@@ -89,7 +152,9 @@ SMODS.Joker
 		text = 
 		{
 			'Round {C:chips}Chips{} and {C:mult}Mult{} up',
-			'to nearest {C:attention}power of two{}'
+			'to nearest {C:attention}power of two{}',
+			'\n',
+			'{C:inactive}\'The old way to program\''
 		}
 	},
 	atlas = 'Jokers',
@@ -117,6 +182,109 @@ SMODS.Joker
 }
 
 
+--Raining Metal--
+SMODS.Joker
+{
+	key = 'raini',
+	loc_txt = 
+	{
+		name = 'Raining Metal',
+		text = 
+		{
+			'{C:green}50/50{} to give either {X:mult,C:white}X3{} Mult or {X:mult,C:white}X0.5{} Mult',
+			'Triggers again for every {C:attention}Joker{} to the left of it',
+			'\n',
+			' {C:inactive}\'I insert the shells in an unknown order\'{} '
+		}
+	},
+	atlas = 'Jokers',
+	config =
+	{
+		extra =
+		{
+			self_pos = 1
+		}
+	},
+	pos = {x = 4, y = 5},
+	rarity = 3,
+	cost = 7,
+	blueprint_compat = true,
+	calculate = function(self, card, context)
+		for i,v in ipairs(G.jokers.cards) do
+			if v == card then card.ability.extra.self_pos = i; break end
+		end
+		if context.joker_main and context.cardarea == G.jokers then
+			local allLives = true
+			local allBlanks = true
+			local ret = {}
+			local oops = false
+			for i,v in ipairs(G.jokers.cards) do
+				if v.config.center.key == 'j_oops' then
+					G.E_MANAGER:add_event(Event({
+						func = function()
+							G.jokers.cards[i]:start_dissolve({G.C.RED}, nil, 1.6)
+							play_sound('deal_live')
+							return true
+						end
+					}))
+					oops = true
+				end
+			end
+			if oops then
+				return
+				{
+					message = 'Cheater...',
+					colour = G.C.MULT
+				}
+			end
+			local function append_extra(ret, append)
+				if ret.extra then return append_extra(ret.extra, append) end
+				ret.extra = append
+				return ret
+			end
+			for i=1,card.ability.extra.self_pos do
+				if pseudorandom('HandSaw') < G.GAME.probabilities.normal / 2 then
+					allBlanks = false
+					append_extra(ret, {
+						card = card,
+						Xmult_mod = 3,
+						message = 'Live!',
+						colour = G.C.MULT,
+						sound = 'deal_live'
+					})
+				else
+					allLives = false
+					append_extra(ret, {
+						card = card,
+						Xmult_mod = .5,
+						message = 'Blank...',
+						colour = G.C.MULT,
+						sound = 'deal_blank'
+					})
+				end
+			end
+			if allLives and card.ability.extra.self_pos > 2 then
+				append_extra(ret, {
+					card = card,
+					message = 'Payout!',
+					colour = G.C.GOLD,
+					dollars = 5 * (card.ability.extra.self_pos - 2),
+					delay = 2
+				})
+			end
+			if allBlanks and card.ability.extra.self_pos > 2 then
+				append_extra(ret, {
+					card = card,
+					message = 'How unfortunate...',
+					colour = G.C.MULT,
+					delay = 2
+				})
+			end
+			return ret
+		end
+	end
+}
+
 --Jooj--
 SMODS.Joker
 {
@@ -129,7 +297,9 @@ SMODS.Joker
 			'{C:attention}Jooj{} will {C:attention}jooj{} a random {C:attention}joker{} at start of round',
 			'Subsequent {C:attention}Jooji{} sell well',
 			'{C:inactive,s:0.8}Art and concept by{}',
-			'{X:tarot,C:white,s:0.8}JinFlux{C:inactive,s:0.8} on the discord!{}'
+			'{X:tarot,C:white,s:0.8}JinFlux{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Jooj\''
 		}
 	},
 	atlas = 'Jokers',
@@ -139,6 +309,7 @@ SMODS.Joker
 	pos = {x = 2, y = 0},
 	rarity = 3,
 	cost = 7,
+	blueprint_compat = false,
 	calculate = function(self, card, context)
 		if context.setting_blind and not self.getting_sliced and not context.blueprint then
 			local eatable_jokers = {}
@@ -178,122 +349,93 @@ SMODS.Joker
 	end
 }
 
-
---Laughing Joker--
+--Golden Jooj--
 SMODS.Joker
 {
-	key = 'laugh',
+	key = 'joojg',
 	loc_txt = 
 	{
-		name = 'Laughing Joker',
+		name = 'Golden Jooj clone',
 		text = 
 		{
-			'{C:mult}+3{} Mult per {C:attention}face{} card scored',
-			'{C:inactive}(Currently {C:mult}+#1#{C:inactive} Mult){}',
-			'{C:inactive,s:0.8}Art and concept by{}',
-			'{X:red,C:white,s:0.8}KoLGames{}{C:inactive,s:0.8} on the discord!{}'
+			'{C:green}#1# in #2#{} chance to replace a normal {C:attention}Jooj{} clone',
+			'{X:mult,C:white}X2{} Mult',
+			'Has an extremely high {C:attention}sell value{}',
+			'{C:inactive,s:0.8}Original art and concept by{}',
+			'{X:tarot,C:white,s:0.8}JinFlux{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Not actually that valuable but dont tell the dealer\''
 		}
 	},
 	atlas = 'Jokers',
-	pos = {x = 3, y = 0},
-	rarity = 2,
-	cost = 6,
+	pos = {x = 4, y = 3},
+	rarity = 3,
+	cost = 100,
+	blueprint_compat = true,
+	in_pool = function(self)
+        return false
+	end,
 	config = 
 	{
-		extra = 
+		extra =
 		{
-			mult = 0
+			odds = 20
 		}
 	},
-	loc_vars = function(self,info_queue,card)
-		return {vars = {card.ability.extra.mult}}
+	loc_vars = function(self,info_queue,center)
+		return {vars = {G.GAME.probabilities.normal, center.ability.extra.odds}}
 	end,
 	calculate = function(self, card, context)
-		if context.scoring_hand and context.cardarea == G.play and context.individual and context.other_card:is_face() and not context.blueprint then
-			card.ability.extra.mult=card.ability.extra.mult+3
-			return
-			{
-				message = 'Upgrade!',
-				juice_card = card,
-                colour = G.C.ORANGE
-			}
-		end
-		
 		if context.joker_main then
 			return
 			{
 				card = card,
-				mult_mod = card.ability.extra.mult,
-				message = '+' .. card.ability.extra.mult .. 'Mult',
+				Xmult_mod = 2,
+				message = 'X2',
 				colour = G.C.MULT
 			}
 		end
 	end
 }
 
-
-
---Mimic Joker--
+--Jooj clone--
 SMODS.Joker
 {
-	key = 'mimic',
+	key = 'joojc',
 	loc_txt = 
 	{
-		name = 'Mimic Joker',
+		name = 'Jooj clone',
 		text = 
 		{
-			'Copies ability of a random',
-			'compatible {C:attention}Joker{} each {C:attention}round{}',
-			'{C:inactive}(Currently copying {X:attention,C:white}#1#{C:inactive}){}',
-			'{C:inactive,s:0.8}Art and concept by{}',
-			'{X:mult,C:white,s:0.8}KoLGames{}{C:inactive,s:0.8} on the discord!{}'
+			'{C:mult}+4{} Mult',
+			'Has a high {C:attention}sell value{}',
+			'{C:inactive,s:0.8}Original art and concept by{}',
+			'{X:tarot,C:white,s:0.8}JinFlux{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Clone of Jooj\''
 		}
 	},
 	atlas = 'Jokers',
-	pos = {x = 4, y = 0},
-	rarity = 2,
-	cost = 8,
-	config =
-	{
-		extra =
-		{
-			selectedJoker = nil,
-		}
-	},
-	loc_vars = function(self,info_queue,card)
-		if card.ability.extra.selectedJoker ~= nil then
-			return {vars = {localize({ type = "name_text", set = "Joker", key = card.ability.extra.selectedJoker.config.center.key })}}
-		else
-			return {vars = {'None'}}
-		end
+	pos = {x = 2, y = 0},
+	rarity = 3,
+	no_collection = true,
+	cost = 20,
+	blueprint_compat = true,
+	in_pool = function(self)
+        return false
 	end,
-	calculate = function(self,card,context)
-		if context.setting_blind then
-			local jokerList = {}
-			local j = 0
-			for i,v in ipairs(G.jokers.cards) do
-				if v.ability.name ~= 'Blueprint' and v.ability.name ~= 'Brainstorm' and v.ability.name ~= 'Mimic Joker' and v.config.center.blueprint_compat then
-					jokerList[#jokerList + 1] = v
-				end
-			end
-			card.ability.extra.selectedJoker = pseudorandom_element(jokerList,pseudoseed('fuckthispieceofshit'))
-		end
-		local other_joker = card.ability.extra.selectedJoker
-		if other_joker ~= nil then
-			context.blueprint = (context.blueprint and (context.blueprint + 1)) or 1
-			local copy_return = other_joker:calculate_joker(context)
-			if copy_return then
-				return other_joker:calculate_joker(context)
-			end
-			context.blueprint = false
+	calculate = function(self, card, context)
+		if context.joker_main then
+			return
+			{
+				card = card,
+				mult_mod = 4,
+				message = '+4',
+				colour = G.C.MULT
+			}
 		end
 	end
 }
-
-
-
-
-
 
 
 
@@ -327,6 +469,9 @@ SMODS.Joker
 			'at the end of the {C:attention}Shop{}',
 			'{C:inactive,s:0.8}Art and original concept by{}',
 			'{X:chips,C:white,s:0.8}Kitty{}{C:inactive,s:0.8} on the discord!{}'
+			,
+			'\n',
+			'{C:inactive}\'Always happy to see you\''
 		}
 	},
 	config =
@@ -343,6 +488,7 @@ SMODS.Joker
 	atlas = 'Jokers',
 	pos = {x = 4, y = 1},
 	cost = 4,
+	blueprint_compat = true,
 	calculate = function(self,card,context)
 		if context.ending_shop and pseudorandom('insertanysubseedhere') < G.GAME.probabilities.normal / 2 and #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then
 			local _card = create_card(nil, G.consumeables, nil, nil, nil, nil, 'c_fool', 'randomassseed')
@@ -363,12 +509,15 @@ SMODS.Joker
 			'{C:attention}Kings{} and {C:attention}Queens{} played this hand',
 			'adds {X:mult,C:white}X0.2{} to {C:attention}Joker{}',
 			'{C:inactive,s:0.8}Art and original concept by{}',
-			'{X:chips,C:white,s:0.8}Kitty{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:chips,C:white,s:0.8}Kitty{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Does magic tricks on the weekend\''
 		}
 	},
 	atlas = 'Jokers',
 	pos = {x = 1, y = 1},
 	cost = 6,
+	blueprint_compat = true,
 	config =
 	{
 		extra =
@@ -414,7 +563,9 @@ SMODS.Joker
 			'Each discarded {C:attention}face{} card',
 			'gives {C:money}$1{}',
 			'{C:inactive,s:0.8}Art and original concept by{}',
-			'{X:chips,C:white,s:0.8}Kitty{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:chips,C:white,s:0.8}Kitty{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Somehow makes canned soup taste better\''
 		}
 	},
 	config =
@@ -427,6 +578,7 @@ SMODS.Joker
 	cost = 6,
 	atlas = 'Jokers',
 	pos = {x = 0, y = 1},
+	blueprint_compat = true,
 	calculate = function(self,card,context)
 		if context.discard and context.other_card:is_face(true) and #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then
 			if context.other_card.debuff then
@@ -455,7 +607,9 @@ SMODS.Joker
 			'{C:mult}+1{} Mult per {C:attention}card{} discarded this round',
 			'{C:inactive}(Currently {}{C:mult}+#1#{}{C:inactive} Mult){}',
 			'{C:inactive,s:0.8}Art and original concept by{}',
-			'{X:chips,C:white,s:0.8}Kitty{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:chips,C:white,s:0.8}Kitty{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'In his Yellow period\''
 		}
 	},
 	atlas = 'Jokers',
@@ -471,6 +625,7 @@ SMODS.Joker
 	loc_vars = function(self,info_queue,center)
 		return {vars = {center.ability.extra.mult}}
 	end,
+	blueprint_compat = true,
 	calculate = function(self,card,context)
 		if context.discard and not context.blueprint then
 			card.ability.extra.mult=card.ability.extra.mult+1 
@@ -510,7 +665,9 @@ SMODS.Joker
 			'{C:attention}Boss effect{} is disabled',
 			'during the {C:attention}last hand{} of a blind',
 			'{C:inactive,s:0.8}Art and original concept by{}',
-			'{X:chips,C:white,s:0.8}Kitty{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:chips,C:white,s:0.8}Kitty{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Makes a great drag queen\''
 		}
 	},
 	atlas = 'Jokers',
@@ -551,7 +708,9 @@ SMODS.Joker
 			'When {C:attention}sold,{}',
 			'{C:attention}destroy{} selected playing cards',
 			'{C:inactive,s:0.8}Art and concept by{}',
-			'{X:attention,C:white,s:0.8}Scott C.{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:attention,C:white,s:0.8}Scott C.{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Kaboom!\''
 		}
 	},
 	atlas = 'Jokers',
@@ -584,20 +743,24 @@ SMODS.Joker
 		{
 			'{C:attention}Stone{} cards give {C:money}$2{} when scored',
 			'{C:inactive,s:0.8}Art and original concept by{}',
-			'{X:attention,C:white,s:0.8}Scott C.{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:attention,C:white,s:0.8}Scott C.{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Hard working or hardly working, who\'s to tell?\''
 		}
 	},
 	atlas = 'Jokers',
 	pos = {x = 1, y = 2},
 	rarity = 2,
 	cost = 6,
+	blueprint_compat = true,
 	loc_vars = function(self,info_queue,center)
 		table.insert(info_queue, G.P_CENTERS.m_stone)
 	end,
 	calculate = function(self, card, context)
 		if context.individual and context.cardarea == G.play and context.other_card.ability.name == 'Stone Card' and #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then
 			if context.other_card.debuff then
-                return {
+                return 
+				{
                     message = 'Fuck you',
                     colour = G.C.RED,
                     card = card,
@@ -625,7 +788,9 @@ SMODS.Joker
 			'{C:attention}Stone{} cards get {C:attention}Foiled{}',
 			'when scored',
 			'{C:inactive,s:0.8}Art and concept by{}',
-			'{X:attention,C:white,s:0.8}Scott C.{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:attention,C:white,s:0.8}Scott C.{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Smoothens even the roughest edges\''
 		}
 	},
 	loc_vars = function(self,info_queue,center)
@@ -657,13 +822,16 @@ SMODS.Joker
 			'When your {C:attention}consumable{} slots are full',
 			'{C:blue}blue seals{} instead level up the played hand',
 			'{C:inactive,s:0.8}Art and concept by{}',
-			'{X:attention,C:white,s:0.8}Scott C.{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:attention,C:white,s:0.8}Scott C.{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Shines brightest at the end of its life\''
 		}
 	},
 	atlas = 'Jokers',
 	pos = {x = 3, y = 2},
 	rarity = 3,
 	cost = 8,
+	blueprint_compat = true,
 	loc_vars = function(self,info_queue,center)
 		table.insert(info_queue, G.P_SEALS.Blue)
 	end,
@@ -697,9 +865,13 @@ SMODS.Joker
 			'flat {C:money}$5{} when used',
 			'{C:inactive,s:0.8}Art and concept by{}',
 			'{X:attention,C:white,s:0.8}Scott C.{}{C:inactive,s:0.8} on the discord!{}'
+			,
+			'\n',
+			'{C:inactive}\'Cha-Ching!\''
 		}
 	},
 	atlas = 'Jokers',
+	blueprint_compat = true,
 	loc_vars = function(self,info_queue,center)
 		table.insert(info_queue, G.P_CENTERS.c_temperance)
 		table.insert(info_queue, G.P_CENTERS.c_hermit)
@@ -730,6 +902,136 @@ SMODS.Joker
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+---KoLGames' Jokers---
+
+--Laughing Joker--
+SMODS.Joker
+{
+	key = 'laugh',
+	loc_txt = 
+	{
+		name = 'Laughing Joker',
+		text = 
+		{
+			'{C:mult}+3{} Mult per {C:attention}face{} card scored',
+			'{C:inactive}(Currently {C:mult}+#1#{C:inactive} Mult){}',
+			'{C:inactive,s:0.8}Art and concept by{}',
+			'{X:red,C:white,s:0.8}KoLGames{}{C:inactive,s:0.8} on the discord!{}'
+			,
+			'\n',
+			'{C:inactive}\'What\'re you laughing at?\''
+		}
+	},
+	atlas = 'Jokers',
+	pos = {x = 3, y = 0},
+	rarity = 2,
+	cost = 6,
+	config = 
+	{
+		extra = 
+		{
+			mult = 0
+		}
+	},
+	blueprint_compat = true,
+	loc_vars = function(self,info_queue,card)
+		return {vars = {card.ability.extra.mult}}
+	end,
+	calculate = function(self, card, context)
+		if context.scoring_hand and context.cardarea == G.play and context.individual and context.other_card:is_face() and not context.blueprint then
+			card.ability.extra.mult=card.ability.extra.mult+3
+			return
+			{
+				message = 'Upgrade!',
+				juice_card = card,
+                colour = G.C.ORANGE
+			}
+		end
+		
+		if context.joker_main then
+			return
+			{
+				card = card,
+				mult_mod = card.ability.extra.mult,
+				message = '+' .. card.ability.extra.mult .. 'Mult',
+				colour = G.C.MULT
+			}
+		end
+	end
+}
+
+--Mimic Joker--
+SMODS.Joker
+{
+	key = 'mimic',
+	loc_txt = 
+	{
+		name = 'Mimic Joker',
+		text = 
+		{
+			'Copies ability of a random',
+			'compatible {C:attention}Joker{} each {C:attention}round{}',
+			'{C:inactive}(Currently copying {X:attention,C:white}#1#{C:inactive}){}',
+			'{C:inactive,s:0.8}Art and concept by{}',
+			'{X:mult,C:white,s:0.8}KoLGames{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Blueprint but gambling\''
+		}
+	},
+	atlas = 'Jokers',
+	pos = {x = 4, y = 0},
+	rarity = 2,
+	cost = 8,
+	blueprint_compat = true,
+	config =
+	{
+		extra =
+		{
+			selectedJoker = nil,
+		}
+	},
+	loc_vars = function(self,info_queue,card)
+		if card.ability.extra.selectedJoker ~= nil then
+			return {vars = {localize({ type = "name_text", set = "Joker", key = card.ability.extra.selectedJoker.config.center.key })}}
+		else
+			return {vars = {'None'}}
+		end
+	end,
+	calculate = function(self,card,context)
+		if context.setting_blind then
+			local jokerList = {}
+			local j = 0
+			for i,v in ipairs(G.jokers.cards) do
+				if v.ability.name ~= 'Blueprint' and v.ability.name ~= 'Brainstorm' and v.ability.name ~= 'Mimic Joker' and v.config.center.blueprint_compat then
+					jokerList[#jokerList + 1] = v
+				end
+			end
+			card.ability.extra.selectedJoker = pseudorandom_element(jokerList,pseudoseed('fuckthispieceofshit'))
+		end
+		local other_joker = card.ability.extra.selectedJoker
+		if other_joker ~= nil then
+			context.blueprint = (context.blueprint and (context.blueprint + 1)) or 1
+			local copy_return = other_joker:calculate_joker(context)
+			if copy_return then
+				return other_joker:calculate_joker(context)
+			end
+			context.blueprint = false
+		end
+	end
+}
+
 --Boosting Pack--
 SMODS.Joker
 {
@@ -745,7 +1047,9 @@ SMODS.Joker
 			'{C:green}#1# in #3#{} for card to have an {C:attention}edition{}',
 			'{C:green}#1# in #4#{} for card to have a {C:attention}seal{}',
 			'{C:inactive,s:0.8}Art and original concept by{}',
-			'{X:red,C:white,s:0.8}KolGames{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:red,C:white,s:0.8}KolGames{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Sweet, a shiny!\''
 		}
 	},
 	config = 
@@ -773,6 +1077,7 @@ SMODS.Joker
 	pos = {x = 0, y = 3},
 	rarity = 3,
 	cost = 6,
+	blueprint_compat = true,
 	calculate = function(self, card, context)
 		if context.joker_main and pseudorandom('aaaa') < G.GAME.probabilities.normal / 3 then
 			G.E_MANAGER:add_event(Event({
@@ -790,6 +1095,113 @@ SMODS.Joker
 					return true
 				end
 			}))
+			return
+			{
+				message = 'Card pulled!',
+				card = card,
+				colour = G.C.MULT
+			}
+		end
+	end
+}
+
+--Dunce--
+SMODS.Joker
+{
+	key = 'dunce',
+	blueprint_compat = true,
+	loc_txt = 
+	{
+		name = 'Dunce',
+		text = 
+		{
+			'Swaps {C:chips}Chips{} and {C:mult}Mult{}',
+			'{C:inactive,s:0.8}Original art and concept by{}',
+			'{X:red,C:white,s:0.8}KolGames{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Constantly mixes things up\'{}'
+		}
+	},
+	atlas = 'Jokers',
+	pos = {x = 0, y = 4},
+	rarity = 2,
+	cost = 5,
+	calculate = function(self, card, context)
+		if context.joker_main and context.cardarea == G.jokers then
+			local tempChips = mult
+			local tempMult = hand_chips
+			hand_chips = tempChips
+			mult = tempMult
+			update_hand_text({delay = 0}, {chips = hand_chips, mult = mult})
+			return
+			{
+				sound = 'multhit2',
+				delay = 1,
+				message = "Swapped!",
+				colour = G.C.ORANGE,
+				card = card
+			}
+		end
+	end
+}
+---KoLGames' Jokers end---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--Comedy Gold--
+SMODS.Joker
+{
+	key = 'comed',
+	loc_txt = 
+	{
+		name = 'Comedy Gold',
+		text = 
+		{
+			'Gain half of all {C:attention}sell value{} of all',
+			'other {C:attention}Jokers{} at end of round',
+			'{C:inactive,s:0.8}Art and concept by{}',
+			'{X:green,C:white,s:0.8}Hat Stack{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'What\'s the deal with walking?\''
+		}
+	},
+	atlas = 'Jokers',
+	pos = {x = 3, y = 3},
+	rarity = 3,
+	cost = 7,
+	blueprint_compat = false,
+	config =
+	{
+		extra =
+		{
+			money = 0
+		}
+	},
+	calculate = function(self, card, context)
+		if context.end_of_round and not context.repetition and not context.individual and not context.blueprint then
+			card.ability.extra.money = 0
+			for i,v in ipairs(G.jokers.cards) do
+				if v ~= self then
+					card.ability.extra.money = card.ability.extra.money + (v.sell_cost / 2)
+				end
+			end
+			card.ability.extra.money = math.floor(card.ability.extra.money)
+		end
+	end,
+	calc_dollar_bonus = function(self, card)
+		if card.ability.extra.money > 0 then
+			return card.ability.extra.money
 		end
 	end
 }
@@ -807,13 +1219,16 @@ SMODS.Joker
 			'Destroy the {C:attention}highest ranked{} card',
 			'in hand after each {C:attention}hand played{}',
 			'{C:inactive,s:0.8}Art and concept by{}',
-			'{X:black,C:white,s:0.8}CROW{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:black,C:white,s:0.8}CROW{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\':3\''
 		}
 	},
 	atlas = 'Jokers',
 	pos = {x = 1, y = 3},
 	rarity = 1,
 	cost = 4,
+	blueprint_compat = true,
 	calculate = function(self, card, context)
 		if context.cardarea == G.hand and context.destroy_card and not card.ability.has_destroyed_this_hand and not context.blueprint then
 			local highest = nil
@@ -843,13 +1258,16 @@ SMODS.Joker
 		{
 			'Retrigger all played {C:attention}glass{} cards',
 			'{C:inactive,s:0.8}Art and concept by{}',
-			'{X:black,C:white,s:0.8}CROW{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:black,C:white,s:0.8}CROW{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Maybe the shards of glass you\'ll make will be worth it\''
 		}
 	},
 	atlas = 'Jokers',
 	pos = {x = 2, y = 3},
 	rarity = 3,
 	cost = 9,
+	blueprint_compat = true,
 	loc_vars = function(self,info_queue,center)
 		table.insert(info_queue, G.P_CENTERS.m_glass)
 	end,
@@ -866,85 +1284,132 @@ SMODS.Joker
 }
 
 
---Comedy Gold--
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--Red Envelope--
 SMODS.Joker
 {
-	key = 'comed',
+	key = 'reden',
+	blueprint_compat = false,
 	loc_txt = 
 	{
-		name = 'Comedy Gold',
+		name = 'Red Envelope',
 		text = 
 		{
-			'Gains half of all {C:attention}sell value{} of all',
-			'other {C:attention}Jokers{} at end of round',
-			'{C:inactive,s:0.8}Art and concept by{}',
-			'{X:green,C:white,s:0.8}Hat Stack{}{C:inactive,s:0.8} on the discord!{}'
+			'Gives {C:money}$20{} at end of each {C:attention}boss blind{}',
+			'{C:inactive,s:0.8}Original art and concept by{}',
+			'{X:money,C:white,s:0.8}ProbablyAnAccount{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Happy New Year!\''
 		}
 	},
 	atlas = 'Jokers',
-	pos = {x = 3, y = 3},
-	rarity = 2,
-	cost = 6,
+	pos = {x = 4, y = 4},
+	rarity = 3,
+	cost = 10,
+	config =
+	{
+		extra =
+		{
+			dolar = 0
+		}
+	},
 	calculate = function(self, card, context)
-		if context.end_of_round and not context.repetition and not context.individual and not context.blueprint then
-			local sellAdd = 0
-			for i,v in ipairs(G.jokers.cards) do
-				if v.config.center.key ~= 'j_deal_comed' then
-					sellAdd = sellAdd + math.floor(v.sell_cost / 2)
-				end
-			end
-			card.ability.extra_value = card.ability.extra_value + sellAdd
-			card:set_cost()
+		if context.end_of_round and not context.repetition and not context.individual and G.GAME.blind.boss and not context.blueprint then
+			card.ability.extra.dolar = 20
 			return
 			{
-                message = localize('k_val_up'),
-                colour = G.C.MONEY
-            }
+				colour = G.C.GOLD,
+				message = '新年快乐!'
+			}
+		end
+		if context.ending_shop and not context.blueprint then
+			card.ability.extra.dolar = 0
+		end
+	end,
+	
+	calc_dollar_bonus = function(self, card)
+		if card.ability.extra.dolar > 0 then
+			return card.ability.extra.dolar
 		end
 	end
 }
 
 
---Golden Jooj--
+--Medusa--
 SMODS.Joker
 {
-	key = 'joojg',
+	key = 'medus',
+	blueprint_compat = true,
 	loc_txt = 
 	{
-		name = 'Golden Jooj clone',
+		name = 'Medusa',
 		text = 
 		{
-			'{C:green}#1# in #2#{} chance to replace a normal {C:attention}Jooj{} clone',
-			'{X:mult,C:white}X2{} Mult',
-			'Has an extremely high {C:attention}sell value{}',
+			'Gains {C:mult}+4{} Mult when a {C:attention}face card{} is scored',
+			'Then turns it into a {C:attention}stone card{}',
+			'{C:inactive}(Currently {C:mult}+#1#{C:inactive} Mult)',
 			'{C:inactive,s:0.8}Original art and concept by{}',
-			'{X:tarot,C:white,s:0.8}JinFlux{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:purple,C:white,s:0.8}Kars{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Hisssssssssssssss\'{}'
 		}
 	},
 	atlas = 'Jokers',
-	pos = {x = 4, y = 3},
-	rarity = 3,
-	cost = 100,
-	in_pool = function(self)
-        return false
-	end,
-	config = 
+	config =
 	{
 		extra =
 		{
-			odds = 20
+			mult = 0
 		}
 	},
+	pos = {x = 1, y = 4},
+	rarity = 2,
+	cost = 5,
 	loc_vars = function(self,info_queue,center)
-		return {vars = {G.GAME.probabilities.normal, center.ability.extra.odds}}
+		return {vars = {center.ability.extra.mult}}
 	end,
 	calculate = function(self, card, context)
+		if context.scoring_hand and context.cardarea == G.play and not context.blueprint and context.individual and context.other_card:is_face(true) then
+			if context.other_card.debuff then
+                return 
+				{
+                    message = 'Fuck you',
+                    colour = G.C.RED,
+                    card = card,
+                }
+			else
+				card.ability.extra.mult = card.ability.extra.mult + 4
+				context.other_card:set_ability(G.P_CENTERS.m_stone, nil, true)
+				local name = context.other_card.ability.effect
+				context.other_card.becoming_no_rank = nil
+				context.other_card.config.center.replace_base_card = nil
+				return
+				{
+					colour = G.C.RED,
+                    card = card,
+					message = 'Petrified!'
+				}
+			end
+		end
 		if context.joker_main then
 			return
 			{
+				mult_mod = card.ability.extra.mult,
 				card = card,
-				Xmult_mod = 2,
-				message = 'X2',
+				message = '+' .. card.ability.extra.mult .. ' Mult',
 				colour = G.C.MULT
 			}
 		end
@@ -952,37 +1417,326 @@ SMODS.Joker
 }
 
 
---Jooj clone--
+--Sculptor--
 SMODS.Joker
 {
-	key = 'joojc',
+	key = 'sculp',
 	loc_txt = 
 	{
-		name = 'Jooj clone',
+		name = 'Sculptor',
 		text = 
 		{
-			'{C:mult}+4{} Mult',
-			'Has a high {C:attention}sell value{}',
+			'{C:attention}Stone{} cards permanently gain',
+			'{C:chips}+25{} chips when {C:attention}scored{}',
 			'{C:inactive,s:0.8}Original art and concept by{}',
-			'{X:tarot,C:white,s:0.8}JinFlux{}{C:inactive,s:0.8} on the discord!{}'
+			'{X:purple,C:white,s:0.8}Kars{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'A steady hand can refine even the roughest stone\'{}'
 		}
 	},
 	atlas = 'Jokers',
-	pos = {x = 2, y = 0},
+	pos = {x = 2, y = 4},
+	rarity = 2,
+	cost = 6,
+	calculate = function(self, card, context)
+		if context.individual and context.cardarea == G.play and context.other_card.ability.name == 'Stone Card' then
+			context.other_card.ability.perma_bonus = context.other_card.ability.perma_bonus or 0
+            context.other_card.ability.perma_bonus = context.other_card.ability.perma_bonus + 25
+			return
+			{
+				message = 'Refined!',
+				colour = G.C.CHIPS,
+				card = card,
+				focus = context.other_card
+			}
+		end
+	end
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--Blank Joker--
+SMODS.Joker
+{
+	key = 'blank',
+	blueprint_compat = false,
+	loc_txt = 
+	{
+		name = 'Blank Joker',
+		text = 
+		{
+			'{C:green}#1# in #2#{} at end of round to do... {C:dark_edition}something{}',
+			'{C:inactive,s:0.8}Original concept by{}',
+			'{X:black,C:chips,s:0.8}Sustato{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'I mean... at least it looks shiny?\'{}'
+		}
+	},
+	atlas = 'Jokers',
+	pos = {x = 0, y = 5},
 	rarity = 3,
-	no_collection = true,
+	cost = 10,
+	loc_vars = function(self,info_queue,center)
+		return {vars = {G.GAME.probabilities.normal * center.ability.extra.odds_mult, center.ability.extra.odds}}
+	end,
+	config =
+	{
+		extra =
+		{
+			odds = 30,
+			odds_mult = 1
+		}
+	},
+	calculate = function(self, card, context)
+		if context.end_of_round and not context.repetition and not context.individual then 
+			if pseudorandom('insertanysubseedhere') < (G.GAME.probabilities.normal * card.ability.extra.odds_mult) / 30 then
+				G.E_MANAGER:add_event(Event({
+					func = function()
+						local card = create_card('Joker', G.jokers, nil, 0, nil, nil, 'j_deal_darkm', 'rif')
+						card:add_to_deck()
+						G.jokers:emplace(card)
+						card:start_materialize()
+						G.GAME.joker_buffer = 0
+						return true
+					end
+				}))
+				G.E_MANAGER:add_event(Event({
+					func = function()
+						card:start_dissolve({G.C.RED}, nil, 1.6)
+						return true
+					end
+				}))
+			else
+				card.ability.extra.odds_mult = card.ability.extra.odds_mult + 1
+				return
+				{
+					message = 'Cracks grow...',
+					colour = G.C.MULT,
+					card = card
+				}
+			end
+		end
+	end
+}
+
+
+--Dark Matter--
+SMODS.Joker
+{
+	key = 'darkm',
+	blueprint_compat = false,
+	loc_txt = 
+	{
+		name = 'Dark Matter',
+		text = 
+		{
+			'{C:dark_edition}+1{} Hand, {C:dark_edition}+1{} Discard',
+			'{C:dark_edition}+1{} Joker slot, {C:dark_edition}+2{} Handsize',
+			'{C:inactive,s:0.8}Original concept by{}',
+			'{X:black,C:chips,s:0.8}Sustato{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Only observable by its gravity\'{}'
+		}
+	},
+	atlas = 'Jokers',
+	pos = {x = 1, y = 5},
+	rarity = 3,
 	cost = 20,
 	in_pool = function(self)
         return false
 	end,
+	add_to_deck = function(from_debuff)
+		G.hand:change_size(2)
+		G.GAME.round_resets.hands = G.GAME.round_resets.hands + 1
+		G.GAME.round_resets.discards = G.GAME.round_resets.discards + 1
+		G.jokers.config.card_limit = G.jokers.config.card_limit + 1
+	end,
+	set_ability = function(self, card, initial, delay_sprites) card:set_edition('e_negative', true, true) end,
 	calculate = function(self, card, context)
+
+	end
+}
+
+--Gamblecore--
+SMODS.Joker
+{
+	key = 'gambl',
+	blueprint_compat = true,
+	loc_txt = 
+	{
+		name = 'Gamblecore',
+		text = 
+		{
+			'{C:green}#1# in #2#{} chance for each scored card',
+			'to gain an {C:attention}enhancement{}',
+			'{C:inactive,s:0.8}Original art and concept by{}',
+			'{X:tarot,C:white,s:0.8}JinFlux{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Let\'s go gambling!\'{}'
+		
+		}
+	},
+	config =
+	{
+		extra =
+		{
+			odds = 5
+		}
+	},
+	loc_vars = function(self,info_queue,center)
+		return {vars = {G.GAME.probabilities.normal, center.ability.extra.odds}}
+	end,
+	atlas = 'Jokers',
+	pos = {x = 3, y = 4},
+	rarity = 2,
+	cost = 5,
+	calculate = function(self, card, context)
+		if context.cardarea == G.play and context.scoring_hand and context.other_card and pseudorandom('insertanysubseedhere') < G.GAME.probabilities.normal / 5 then
+			context.other_card:set_ability(G.P_CENTERS[SMODS.poll_enhancement({key = 'piss', guaranteed = true})], nil, true)
+			return
+			{
+				message = 'I CAN\'T STOP WINNING!!',
+				colour = G.C.GOLD,
+				sound = 'deal_winning'
+			}
+		end
+	end
+}
+
+--American Joker--
+SMODS.Joker
+{
+	key = 'ameri',
+	blueprint_compat = true,
+	loc_txt = 
+	{
+		name = 'American Joker',
+		text = 
+		{
+			'Gains {X:mult,C:white}X0.1{} mult for every',
+			'{C:attention}Hand{} with exactly 1 scoring {C:attention}face{} card',
+			'{C:inactive}(Currently {X:mult,C:white}X#1#{C:inactive} Mult){}',
+			'{C:inactive,s:0.8}Original art and concept by{}',
+			'{X:black,C:mult,s:0.8}Eyeriss{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Home alone\'{}'
+		}
+	},
+	atlas = 'Jokers',
+	pos = {x = 2, y = 5},
+	rarity = 2,
+	cost = 5,
+	config = 
+	{ 
+		extra = 
+		{
+			Xmult = 1
+		}
+	},
+	loc_vars = function(self,info_queue,center)
+		return {vars = {center.ability.extra.Xmult}}
+	end,
+	calculate = function(self, card, context)
+		if context.before and not context.blueprint then
+			local faces = 0
+            for i, v in ipairs(context.scoring_hand) do
+				if v:is_face() then
+					faces = faces + 1
+				end
+			end
+			if faces == 1 then
+				card.ability.extra.Xmult = card.ability.extra.Xmult + 0.1
+				return
+				{
+					message = 'Upgrade!',
+					colour = G.C.MULT,
+					card = card
+				}
+			end
+		end
 		if context.joker_main then
 			return
 			{
 				card = card,
-				mult_mod = 4,
-				message = '+4',
+				Xmult_mod = card.ability.extra.Xmult,
+				message = 'X' .. card.ability.extra.Xmult,
 				colour = G.C.MULT
+			}
+		end
+	end
+}
+
+
+--Hole in One--
+SMODS.Joker
+{
+	key = 'holei',
+	blueprint_compat = true,
+	loc_txt = 
+	{
+		name = 'Hole in One',
+		text = 
+		{
+			'Gains {C:chips}+30{} chips if round',
+			'is beaten in {C:attention}One Hand{}',
+			'{C:inactive}(Currently {C:chips}+#1#{C:inactive} chips){}',
+			'{C:inactive,s:0.8}Original art and concept by{}',
+			'{X:black,C:green,s:0.8}ThatoneDave{}{C:inactive,s:0.8} on the discord!{}',
+			'\n',
+			'{C:inactive}\'Fore!\'{}'
+		}
+	},
+	atlas = 'Jokers',
+	pos = {x = 3, y = 5},
+	rarity = 1,
+	cost = 10,
+	config = 
+	{ 
+		extra = 
+		{
+			chips = 0
+		}
+	},
+	
+	loc_vars = function(self,info_queue,center)
+		return {vars = {center.ability.extra.chips}}
+	end,
+	calculate = function(self, card, context)
+		if context.end_of_round and not context.repetition and not context.individual and G.GAME.current_round.hands_played == 1 and not context.blueprint then
+			card.ability.extra.chips = card.ability.extra.chips + 30
+			return
+			{
+				message = 'Upgrade!',
+				colour = G.C.CHIPS,
+				card = card
+			}
+		end
+		if context.joker_main then
+			return
+			{
+				card = card,
+				chip_mod = card.ability.extra.chips,
+				message = '+' .. card.ability.extra.chips,
+				colour = G.C.CHIPS
 			}
 		end
 	end
