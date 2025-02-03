@@ -1265,8 +1265,8 @@ SMODS.Joker
 	},
 	atlas = 'Jokers',
 	pos = {x = 2, y = 3},
-	rarity = 3,
-	cost = 9,
+	rarity = 2,
+	cost = 6,
 	blueprint_compat = true,
 	loc_vars = function(self,info_queue,center)
 		table.insert(info_queue, G.P_CENTERS.m_glass)
@@ -1317,8 +1317,8 @@ SMODS.Joker
 	},
 	atlas = 'Jokers',
 	pos = {x = 4, y = 4},
-	rarity = 3,
-	cost = 10,
+	rarity = 2,
+	cost = 6,
 	config =
 	{
 		extra =
