@@ -40,6 +40,8 @@ V1.0 initial release, 20 jokers
 
 V1.1 adds 10 new jokers, and also moves some of the jokers around in the collection to put each artists' jokers next to each other to the best of my ability
 
+V1.1.1 'pissbaby' -might fix the fucking mimic joker
+
 --Upcoming--
 
 V1.2 plans on adding 6 new decks to the game
