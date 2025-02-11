@@ -1003,7 +1003,7 @@ SMODS.Joker
 		}
 	},
 	loc_vars = function(self,info_queue,card)
-		if card.ability.extra.selectedJoker ~= nil then
+		if card.ability.extra.selectedJoker then
 			return {vars = {localize({ type = "name_text", set = "Joker", key = card.ability.extra.selectedJoker.config.center.key })}}
 		else
 			return {vars = {'None'}}
@@ -1012,13 +1012,14 @@ SMODS.Joker
 	calculate = function(self,card,context)
 		if context.setting_blind then
 			local jokerList = {}
-			local j = 0
 			for i,v in ipairs(G.jokers.cards) do
 				if v.ability.name ~= 'Blueprint' and v.ability.name ~= 'Brainstorm' and v.ability.name ~= 'Mimic Joker' and v.config.center.blueprint_compat then
 					jokerList[#jokerList + 1] = v
 				end
 			end
-			card.ability.extra.selectedJoker = pseudorandom_element(jokerList,pseudoseed('fuckthispieceofshit'))
+			if #jokerList > 0 then
+				card.ability.extra.selectedJoker = pseudorandom_element(jokerList,pseudoseed('fuckthispieceofshit'))
+			end
 		end
 		local other_joker = card.ability.extra.selectedJoker
 		if other_joker ~= nil then
@@ -1027,7 +1028,6 @@ SMODS.Joker
 			if copy_return then
 				return other_joker:calculate_joker(context)
 			end
-			context.blueprint = false
 		end
 	end
 }
