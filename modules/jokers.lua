@@ -1229,7 +1229,9 @@ SMODS.Joker
 		name = 'Red Envelope',
 		text = 
 		{
-			'Gives {C:money}$20{} at end of each {C:attention}boss blind{}',
+			'Gives {C:money}$15{} plus {C:money}$2{} per {C:attention}Joker',
+			'at end of each {C:attention}boss blind{}',
+			'{C:inactive}(Currently {C:money}$#1#{C:inactive} dollars)',
 			'{C:inactive,s:0.8}Original art and concept by{}',
 			'{X:money,C:white,s:0.8}ProbablyAnAccount{}{C:inactive,s:0.8} on the discord!{}',
 			'\n',
@@ -1244,12 +1246,17 @@ SMODS.Joker
 	{
 		extra =
 		{
-			dolar = 0
+			dolar = 0,
+			visDolar = 15
 		}
 	},
+	loc_vars = function(self,info_queue,center)
+		return {vars = {center.ability.extra.visDolar}}
+	end,
 	calculate = function(self, card, context)
+		card.ability.extra.visDolar = 15 + #G.jokers.cards * 2
 		if context.end_of_round and not context.repetition and not context.individual and G.GAME.blind.boss and not context.blueprint then
-			card.ability.extra.dolar = 20
+			card.ability.extra.dolar = 15 + #G.jokers.cards * 2
 			return
 			{
 				colour = G.C.GOLD,
